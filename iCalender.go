@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type vCalendar struct {
@@ -47,9 +49,18 @@ type vEvent struct {
 	alarms      []vAlarm
 }
 
-func (event vEvent) add(alarm vAlarm) *vEvent {
-	event.alarms = append(event.alarms, alarm)
-	return &event
+func newVEvent(t time.Time, alarms []vAlarm, name string) *vEvent {
+	uid := uuid.NewSHA1(uuid.NameSpaceURL, []byte(t.String()+name))
+	return &vEvent{
+		dateOnly:    true,
+		uid:         fmt.Sprintf("%s@losers.fyi", uid.String()),
+		start:       t,
+		end:         t,
+		created:     time.Now(),
+		description: name,
+		summary:     name,
+		alarms:      alarms,
+	}
 }
 
 func (event vEvent) String() string {
@@ -59,10 +70,10 @@ func (event vEvent) String() string {
 	builder.WriteString(fmt.Sprintf("UID:%s\r\n", event.uid))
 	if event.dateOnly {
 		builder.WriteString(fmt.Sprintf("DTSTART;VALUE=DATE:%s\r\n", event.start.Format("20060102")))
-		builder.WriteString(fmt.Sprintf("DTEND;VALUE=DATE:%s\r\n", event.start.Format("20060102")))
+		builder.WriteString(fmt.Sprintf("DTEND;VALUE=DATE:%s\r\n", event.end.Format("20060102")))
 	} else {
 		builder.WriteString(fmt.Sprintf("DTSTART:%s\r\n", event.start.Format("20060102T150405")))
-		builder.WriteString(fmt.Sprintf("DTEND:%s\r\n", event.start.Format("20060102T150405")))
+		builder.WriteString(fmt.Sprintf("DTEND:%s\r\n", event.end.Format("20060102T150405")))
 	}
 	builder.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", event.description))
 	builder.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", event.summary))
